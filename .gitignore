@@ -1,0 +1,17 @@
+out
+build/
+.vs
+.vscode
+.idea
+
+
+CMakeCache.txt
+CMakeSettings.json
+CMakeCache.txt
+CMakeFiles
+
+.clangd
+.cache
+imgui.ini
+*.raddbg
+*.gdb
