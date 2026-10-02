@@ -45,7 +45,11 @@
 #include <glm/gtx/quaternion.hpp>             // E08
 #include <glm/gtx/transform.hpp>              // E08
 #include <glm/gtx/matrix_decompose.hpp>       // E08
+#include <glm/gtx/string_cast.hpp>
 
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 
 #ifdef ITU_SYS_RENDER_3D_IMPLEMENTATION
 // assimp: https://assimp.org/
