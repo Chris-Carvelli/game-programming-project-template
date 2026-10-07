@@ -170,13 +170,3 @@
 - TTF_SetFontScriptName
 + TTF_SetFontScript
   (...)
-@@
-@@
-- TTF_GetError
-+ SDL_GetError
-  (...)
-@@
-@@
-- TTF_SetError
-+ SDL_SetError
-  (...)

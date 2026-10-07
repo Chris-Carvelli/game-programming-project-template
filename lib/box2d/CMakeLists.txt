@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.22)
 include(FetchContent)
 include(CMakeDependentOption)
 
@@ -131,7 +131,3 @@ if(PROJECT_IS_TOP_LEVEL)
 		add_subdirectory(docs)
 	endif()
 endif()
-
-# # Building on clang in windows
-# cmake -S .. -B . -G "Visual Studio 17 2022" -A x64 -T ClangCL
-# https://clang.llvm.org/docs/UsersManual.html#clang-cl

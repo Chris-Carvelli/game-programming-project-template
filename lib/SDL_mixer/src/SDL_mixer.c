@@ -233,7 +233,7 @@ static void TrackStopped(MIX_Track *track)
         SDL_assert(track->fire_and_forget_next == NULL);  // shouldn't be in the list at all right now.
         MIX_SetTrackAudio(track, NULL);
         MIX_Mixer *mixer = track->mixer;
-        LockMixer(mixer);  // !!! FIXME: this locks the mixer after the track; everything else locks in the other order! But StopTrack() is the only place outside the mixer thread (which holds both locks already) that calls this, and it shouldn't be able to call it for fire-and-forget tracks. Clean this up or at least document this better.
+        LockMixer(mixer);
         track->fire_and_forget_next = mixer->fire_and_forget_pool;
         mixer->fire_and_forget_pool = track;
         UnlockMixer(mixer);
@@ -579,7 +579,6 @@ static void SDLCALL MixerCallback(void *userdata, SDL_AudioStream *stream, int a
         int group_bytes = 0;
         MIX_Track *next_track = NULL;
         for (MIX_Track *track = group->tracks; track; track = next_track) {
-            LockTrack(track);
             next_track = track->group_next;  // this won't save you from a callback going totally rogue, but it'll deal with the current track leaving the group.
 
             track->currently_inuse = true;
@@ -617,10 +616,7 @@ static void SDLCALL MixerCallback(void *userdata, SDL_AudioStream *stream, int a
             }
 
             track->currently_inuse = false;
-            const bool destroy_requested = track->destroy_requested;  // save this off just in case, but if the callback destroyed the track, _nothing_ else should touch it once this unlocks.
-            UnlockTrack(track);
-
-            if (destroy_requested) {  // callback asked to destroy the track while we were still using it.
+            if (track->destroy_requested) {  // callback asked to destroy the track while we were still using it.
                 MIX_DestroyTrack(track);  // actually kill it now.
             }
         }
@@ -720,8 +716,10 @@ void MIX_Quit(void)
     SDL_assert(mixer_initialized >= 0);
 
     if (mixer_initialized <= 0) {
-        return;   // not initialized.
-    } else if (mixer_initialized > 1) {
+        return;   // not mixer_initialized
+    }
+
+    if (mixer_initialized > 1) {
         mixer_initialized--;
         return;  // more refcounts to go.
     }
@@ -2399,11 +2397,11 @@ bool MIX_PlayAudio(MIX_Mixer *mixer, MIX_Audio *audio)
     return retval;
 }
 
-static void StopTrack(MIX_Track *track, Sint64 fade_out_frames)
+static void StopTrack(MIX_Track *track, Sint64 fadeOut)
 {
     LockTrack(track);
     if (track->state != MIX_STATE_STOPPED) {
-        if (fade_out_frames <= 0) {  // stop immediately.
+        if (fadeOut <= 0) {  // stop immediately.
             if (track->internal_stream) {
                 SDL_ClearAudioStream(track->internal_stream);  // make sure we don't leave old data hanging around.
             }
@@ -2411,8 +2409,8 @@ static void StopTrack(MIX_Track *track, Sint64 fade_out_frames)
             TrackStopped(track);
             track->currently_inuse = false;
         } else {
-            track->total_fade_frames = fade_out_frames;
-            track->fade_frames = fade_out_frames;
+            track->total_fade_frames = fadeOut;
+            track->fade_frames = fadeOut;
             track->fade_direction = -1;
             track->fade_start_gain = 0.0f;  // only used for fade-ins.
         }

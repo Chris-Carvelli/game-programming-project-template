@@ -1,6 +1,6 @@
 /*
   SDL_ttf:  A companion library to SDL for working with TrueType (tm) fonts
-  Copyright (C) 2001-2026 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 2001-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -45,8 +45,8 @@ extern "C" {
  * Printable format: "%d.%d.%d", MAJOR, MINOR, MICRO
  */
 #define SDL_TTF_MAJOR_VERSION   3
-#define SDL_TTF_MINOR_VERSION   3
-#define SDL_TTF_MICRO_VERSION   0
+#define SDL_TTF_MINOR_VERSION   2
+#define SDL_TTF_MICRO_VERSION   2
 
 /**
  * This is the version number macro for the current SDL_ttf version.
@@ -160,7 +160,7 @@ extern SDL_DECLSPEC TTF_Font * SDLCALL TTF_OpenFont(const char *file, float ptsi
  * the last indexed size will be the default.
  *
  * If `closeio` is true, `src` will be automatically closed once the font is
- * closed. Otherwise you should keep `src` open until the font is closed.
+ * closed. Otherwise you should close `src` yourself after closing the font.
  *
  * When done with the returned TTF_Font, use TTF_CloseFont() to dispose of it.
  *
@@ -187,11 +187,11 @@ extern SDL_DECLSPEC TTF_Font * SDLCALL TTF_OpenFontIO(SDL_IOStream *src, bool cl
  * - `TTF_PROP_FONT_CREATE_FILENAME_STRING`: the font file to open, if an
  *   SDL_IOStream isn't being used. This is required if
  *   `TTF_PROP_FONT_CREATE_IOSTREAM_POINTER` and
- *   `TTF_PROP_FONT_CREATE_EXISTING_FONT_POINTER` aren't set.
+ *   `TTF_PROP_FONT_CREATE_EXISTING_FONT` aren't set.
  * - `TTF_PROP_FONT_CREATE_IOSTREAM_POINTER`: an SDL_IOStream containing the
  *   font to be opened. This should not be closed until the font is closed.
  *   This is required if `TTF_PROP_FONT_CREATE_FILENAME_STRING` and
- *   `TTF_PROP_FONT_CREATE_EXISTING_FONT_POINTER` aren't set.
+ *   `TTF_PROP_FONT_CREATE_EXISTING_FONT` aren't set.
  * - `TTF_PROP_FONT_CREATE_IOSTREAM_OFFSET_NUMBER`: the offset in the iostream
  *   for the beginning of the font, defaults to 0.
  * - `TTF_PROP_FONT_CREATE_IOSTREAM_AUTOCLOSE_BOOLEAN`: true if closing the
@@ -208,9 +208,9 @@ extern SDL_DECLSPEC TTF_Font * SDLCALL TTF_OpenFontIO(SDL_IOStream *src, bool cl
  * - `TTF_PROP_FONT_CREATE_VERTICAL_DPI_NUMBER`: the vertical DPI to use for
  *   font rendering, defaults to `TTF_PROP_FONT_CREATE_HORIZONTAL_DPI_NUMBER`
  *   if set, or 72 otherwise.
- * - `TTF_PROP_FONT_CREATE_EXISTING_FONT_POINTER`: an optional TTF_Font that,
- *   if set, will be used as the font data source and the initial size and
- *   style of the new font.
+ * - `TTF_PROP_FONT_CREATE_EXISTING_FONT`: an optional TTF_Font that, if set,
+ *   will be used as the font data source and the initial size and style of
+ *   the new font.
  *
  * \param props the properties to use.
  * \returns a valid TTF_Font, or NULL on failure; call SDL_GetError() for more
@@ -232,7 +232,7 @@ extern SDL_DECLSPEC TTF_Font * SDLCALL TTF_OpenFontWithProperties(SDL_Properties
 #define TTF_PROP_FONT_CREATE_FACE_NUMBER                "SDL_ttf.font.create.face"
 #define TTF_PROP_FONT_CREATE_HORIZONTAL_DPI_NUMBER      "SDL_ttf.font.create.hdpi"
 #define TTF_PROP_FONT_CREATE_VERTICAL_DPI_NUMBER        "SDL_ttf.font.create.vdpi"
-#define TTF_PROP_FONT_CREATE_EXISTING_FONT_POINTER      "SDL_ttf.font.create.existing_font"
+#define TTF_PROP_FONT_CREATE_EXISTING_FONT              "SDL_ttf.font.create.existing_font"
 
 /**
  * Create a copy of an existing font.
@@ -676,7 +676,7 @@ extern SDL_DECLSPEC bool SDLCALL TTF_GetFontSDF(const TTF_Font *font);
  * \threadsafety This function should be called on the thread that created the
  *               font.
  *
- * \since This function is available since SDL_ttf 3.2.2.
+ * \since This function is available since SDL_ttf 3.4.0.
  */
 extern SDL_DECLSPEC int SDLCALL TTF_GetFontWeight(const TTF_Font *font);
 
@@ -968,46 +968,6 @@ extern SDL_DECLSPEC bool SDLCALL TTF_SetFontDirection(TTF_Font *font, TTF_Direct
  * \since This function is available since SDL_ttf 3.0.0.
  */
 extern SDL_DECLSPEC TTF_Direction SDLCALL TTF_GetFontDirection(TTF_Font *font);
-
-/**
- * Set additional space in pixels to be applied between any two rendered
- * characters.
- *
- * The spacing value is applied uniformly after each character, in addition to
- * the normal glyph's advance.
- *
- * Spacing may be a negative value, in which case it will reduce the distance
- * instead.
- *
- * This updates any TTF_Text objects using this font.
- *
- * \param font the font to specify a direction for.
- * \param spacing the new additional glyph spacing for the font.
- * \returns true on success or false on failure; call SDL_GetError() for more
- *          information.
- *
- * \threadsafety This function should be called on the thread that created the
- *               font.
- *
- * \since This function is available since SDL_ttf 3.4.0.
- */
-extern SDL_DECLSPEC bool SDLCALL TTF_SetFontCharSpacing(TTF_Font *font, int spacing);
-
-/**
- * Get the additional character spacing in pixels to be applied between any
- * two rendered characters.
- *
- * This defaults to 0 if it hasn't been set.
- *
- * \param font the font to query.
- * \returns the character spacing in pixels.
- *
- * \threadsafety This function should be called on the thread that created the
- *               font.
- *
- * \since This function is available since SDL_ttf 3.4.0.
- */
-extern SDL_DECLSPEC int SDLCALL TTF_GetFontCharSpacing(TTF_Font *font);
 
 /**
  * Convert from a 4 character string to a 32-bit tag.
@@ -1733,13 +1693,12 @@ extern SDL_DECLSPEC SDL_Surface * SDLCALL TTF_RenderGlyph_LCD(TTF_Font *font, Ui
  * to perform customize rendering with text objects. See
  * <SDL3_ttf/SDL_textengine.h> for details.
  *
- * There are four text engines provided with the library:
+ * There are three text engines provided with the library:
  *
  * - Drawing to an SDL_Surface, created with TTF_CreateSurfaceTextEngine()
  * - Drawing with an SDL 2D renderer, created with
  *   TTF_CreateRendererTextEngine()
  * - Drawing with the SDL GPU API, created with TTF_CreateGPUTextEngine()
- * - Drawing with OpenGL, created with TTF_CreateGLTextEngine()
  *
  * \since This struct is available since SDL_ttf 3.0.0.
  */
@@ -1854,10 +1813,10 @@ extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateRendererTextEngine(SDL_Re
  *
  * These are the supported properties:
  *
- * - `TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER_POINTER`: the renderer to use for
+ * - `TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER`: the renderer to use for
  *   creating textures and drawing text
- * - `TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER`: the size of
- *   the texture atlas
+ * - `TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE`: the size of the
+ *   texture atlas
  *
  * \param props the properties to use.
  * \returns a TTF_TextEngine object or NULL on failure; call SDL_GetError()
@@ -1874,8 +1833,8 @@ extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateRendererTextEngine(SDL_Re
  */
 extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateRendererTextEngineWithProperties(SDL_PropertiesID props);
 
-#define TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER_POINTER          "SDL_ttf.renderer_text_engine.create.renderer"
-#define TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER "SDL_ttf.renderer_text_engine.create.atlas_texture_size"
+#define TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER                 "SDL_ttf.renderer_text_engine.create.renderer"
+#define TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE       "SDL_ttf.renderer_text_engine.create.atlas_texture_size"
 
 /**
  * Draw text to an SDL renderer.
@@ -1945,10 +1904,10 @@ extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateGPUTextEngine(SDL_GPUDevi
  *
  * These are the supported properties:
  *
- * - `TTF_PROP_GPU_TEXT_ENGINE_DEVICE_POINTER`: the SDL_GPUDevice to use for
- *   creating textures and drawing text.
- * - `TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER`: the size of the
- *   texture atlas
+ * - `TTF_PROP_GPU_TEXT_ENGINE_DEVICE`: the SDL_GPUDevice to use for creating
+ *   textures and drawing text.
+ * - `TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE`: the size of the texture
+ *   atlas
  *
  * \param props the properties to use.
  * \returns a TTF_TextEngine object or NULL on failure; call SDL_GetError()
@@ -1965,8 +1924,8 @@ extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateGPUTextEngine(SDL_GPUDevi
  */
 extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateGPUTextEngineWithProperties(SDL_PropertiesID props);
 
-#define TTF_PROP_GPU_TEXT_ENGINE_DEVICE_POINTER            "SDL_ttf.gpu_text_engine.create.device"
-#define TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER "SDL_ttf.gpu_text_engine.create.atlas_texture_size"
+#define TTF_PROP_GPU_TEXT_ENGINE_DEVICE                   "SDL_ttf.gpu_text_engine.create.device"
+#define TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE       "SDL_ttf.gpu_text_engine.create.atlas_texture_size"
 
 /**
  * Draw sequence returned by TTF_GetGPUTextDrawData
@@ -1977,7 +1936,7 @@ extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateGPUTextEngineWithProperti
  */
 typedef struct TTF_GPUAtlasDrawSequence
 {
-    SDL_GPUTexture *atlas_texture;          /**< Texture atlas that stores the glyphs, or NULL for solid fill */
+    SDL_GPUTexture *atlas_texture;          /**< Texture atlas that stores the glyphs */
     SDL_FPoint *xy;                         /**< An array of vertex positions */
     SDL_FPoint *uv;                         /**< An array of normalized texture coordinates for each vertex */
     int num_vertices;                       /**< Number of vertices */
@@ -2081,191 +2040,6 @@ extern SDL_DECLSPEC void SDLCALL TTF_SetGPUTextEngineWinding(TTF_TextEngine *eng
  * \sa TTF_SetGPUTextEngineWinding
  */
 extern SDL_DECLSPEC TTF_GPUTextEngineWinding SDLCALL TTF_GetGPUTextEngineWinding(const TTF_TextEngine *engine);
-
-/**
- * Create a text engine for drawing text with OpenGL.
- *
- * The caller is responsible for ensuring the correct OpenGL context is
- * current when calling this function and when using the resulting text
- * engine.
- *
- * The GL text engine and all text created with it become invalid if the
- * OpenGL context is destroyed. Destroy the engine before destroying the
- * context.
- *
- * \returns a TTF_TextEngine object or NULL on failure; call SDL_GetError()
- *          for more information.
- *
- * \threadsafety This function should be called on the thread that created the
- *               OpenGL context.
- *
- * \since This function is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_CreateGLTextEngineWithProperties
- * \sa TTF_DestroyGLTextEngine
- * \sa TTF_GetGLTextDrawData
- */
-extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateGLTextEngine(void);
-
-/**
- * Create a text engine for drawing text with OpenGL, with extra properties.
- *
- * The caller is responsible for ensuring the correct OpenGL context is
- * current when calling this function and when using the resulting text
- * engine.
- *
- * The following properties are supported:
- *
- * - `TTF_PROP_GL_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER`: the size of the
- *   texture atlas in pixels, defaults to 1024.
- *
- * \param props the properties to use.
- * \returns a TTF_TextEngine object or NULL on failure; call SDL_GetError()
- *          for more information.
- *
- * \threadsafety This function should be called on the thread that created the
- *               OpenGL context.
- *
- * \since This function is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_CreateGLTextEngine
- * \sa TTF_DestroyGLTextEngine
- * \sa TTF_GetGLTextDrawData
- */
-extern SDL_DECLSPEC TTF_TextEngine * SDLCALL TTF_CreateGLTextEngineWithProperties(SDL_PropertiesID props);
-
-#define TTF_PROP_GL_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER "SDL_ttf.gl_text_engine.create.atlas_texture_size"
-
-/**
- * A vertex in the draw data returned by TTF_GetGLTextDrawData.
- *
- * \since This struct is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_GLAtlasDrawSequence
- * \sa TTF_GetGLTextDrawData
- */
-typedef struct TTF_GLAtlasDrawVertex
-{
-    SDL_FPoint position; /**< Vertex position */
-    SDL_FPoint texcoord; /**< Texture coordinate, or normalized rectangle coordinate for solid fill */
-} TTF_GLAtlasDrawVertex;
-
-/**
- * A draw sequence in the linked list returned by TTF_GetGLTextDrawData.
- *
- * Each sequence groups primitives that share the same atlas texture and image
- * type, allowing them to be drawn in a single draw call.
- *
- * \since This struct is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_GLAtlasDrawVertex
- * \sa TTF_GetGLTextDrawData
- */
-typedef struct TTF_GLAtlasDrawSequence
-{
-    unsigned int atlas_texture;           /**< OpenGL texture name (same as GLuint), or 0 for solid fill */
-    TTF_GLAtlasDrawVertex *vertices;      /**< An array of interleaved vertex data */
-    int num_vertices;                     /**< Number of vertices */
-    Uint16 *indices;                      /**< An array of indices into the 'vertices' array */
-    int num_indices;                      /**< Number of indices */
-    TTF_ImageType image_type;             /**< The image type of this draw sequence */
-
-    struct TTF_GLAtlasDrawSequence *next; /**< The next sequence (will be NULL in case of the last sequence) */
-} TTF_GLAtlasDrawSequence;
-
-/**
- * Get the geometry data needed for drawing the text.
- *
- * `text` must have been created using a TTF_TextEngine from
- * TTF_CreateGLTextEngine().
- *
- * The positive X-axis is taken towards the right and the positive Y-axis is
- * taken upwards for both the vertex and the texture coordinates, i.e, it
- * follows the same convention used by the OpenGL API. If you want to use a
- * different coordinate system you will need to transform the vertices
- * yourself.
- *
- * If the text looks blocky use linear filtering.
- *
- * \param text the text to draw.
- * \returns a NULL terminated linked list of TTF_GLAtlasDrawSequence objects
- *          or NULL if the passed text is empty or in case of failure; call
- *          SDL_GetError() for more information.
- *
- * \threadsafety This function should be called on the thread that created the
- *               text.
- *
- * \since This function is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_CreateGLTextEngine
- * \sa TTF_CreateText
- */
-extern SDL_DECLSPEC TTF_GLAtlasDrawSequence * SDLCALL TTF_GetGLTextDrawData(TTF_Text *text);
-
-/**
- * Destroy a text engine created for drawing text with OpenGL.
- *
- * All text created by this engine should be destroyed before calling this
- * function.
- *
- * \param engine a TTF_TextEngine object created with
- *               TTF_CreateGLTextEngine().
- *
- * \threadsafety This function should be called on the thread that created the
- *               engine.
- *
- * \since This function is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_CreateGLTextEngine
- */
-extern SDL_DECLSPEC void SDLCALL TTF_DestroyGLTextEngine(TTF_TextEngine *engine);
-
-/**
- * The winding order of the vertices returned by TTF_GetGLTextDrawData.
- *
- * \since This enum is available since SDL_ttf 3.3.0.
- */
-typedef enum TTF_GLTextEngineWinding
-{
-    TTF_GL_TEXTENGINE_WINDING_INVALID = -1,
-    TTF_GL_TEXTENGINE_WINDING_CLOCKWISE,
-    TTF_GL_TEXTENGINE_WINDING_COUNTER_CLOCKWISE
-} TTF_GLTextEngineWinding;
-
-/**
- * Sets the winding order of the vertices returned by TTF_GetGLTextDrawData
- * for a particular GL text engine.
- *
- * \param engine a TTF_TextEngine object created with
- *               TTF_CreateGLTextEngine().
- * \param winding the new winding order option.
- *
- * \threadsafety This function should be called on the thread that created the
- *               engine.
- *
- * \since This function is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_GetGLTextEngineWinding
- */
-extern SDL_DECLSPEC void SDLCALL TTF_SetGLTextEngineWinding(TTF_TextEngine *engine, TTF_GLTextEngineWinding winding);
-
-/**
- * Get the winding order of the vertices returned by TTF_GetGLTextDrawData for
- * a particular GL text engine.
- *
- * \param engine a TTF_TextEngine object created with
- *               TTF_CreateGLTextEngine().
- * \returns the winding order used by the GL text engine or
- *          TTF_GL_TEXTENGINE_WINDING_INVALID in case of error.
- *
- * \threadsafety This function should be called on the thread that created the
- *               engine.
- *
- * \since This function is available since SDL_ttf 3.3.0.
- *
- * \sa TTF_SetGLTextEngineWinding
- */
-extern SDL_DECLSPEC TTF_GLTextEngineWinding SDLCALL TTF_GetGLTextEngineWinding(const TTF_TextEngine *engine);
 
 /**
  * Create a text object from UTF-8 text and a text engine.
@@ -2557,8 +2331,6 @@ extern SDL_DECLSPEC bool SDLCALL TTF_GetTextColorFloat(TTF_Text *text, float *r,
  * \param text the TTF_Text to modify.
  * \param x the x offset of the upper left corner of this text in pixels.
  * \param y the y offset of the upper left corner of this text in pixels.
- * \returns true on success or false on failure; call SDL_GetError() for more
- *          information.
  *
  * \threadsafety This function should be called on the thread that created the
  *               text.
@@ -2577,8 +2349,6 @@ extern SDL_DECLSPEC bool SDLCALL TTF_SetTextPosition(TTF_Text *text, int x, int 
  *          this text in pixels, may be NULL.
  * \param y a pointer filled in with the y offset of the upper left corner of
  *          this text in pixels, may be NULL.
- * \returns true on success or false on failure; call SDL_GetError() for more
- *          information.
  *
  * \threadsafety This function should be called on the thread that created the
  *               text.
@@ -2922,8 +2692,6 @@ extern SDL_DECLSPEC bool SDLCALL TTF_GetTextSubStringForPoint(TTF_Text *text, in
  *
  * \param text the TTF_Text to query.
  * \param substring the TTF_SubString to query.
- * \param previous a pointer filled in with the previous substring in the text
- *                 object.
  * \returns true on success or false on failure; call SDL_GetError() for more
  *          information.
  *

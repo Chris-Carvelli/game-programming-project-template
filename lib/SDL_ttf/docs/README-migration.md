@@ -67,8 +67,8 @@ The following functions have been renamed:
 * TTF_RenderUTF8_Solid_Wrapped() => TTF_RenderText_Solid_Wrapped()
 * TTF_SetFontScriptName() => TTF_SetFontScript()
 * TTF_SetFontWrappedAlign() => TTF_SetFontWrapAlignment()
-* TTF_SizeText() => TTF_GetStringSize()
-* TTF_SizeUTF8() => TTF_GetStringSize()
+* TTF_SizeText() => TTF_GetTextSize()
+* TTF_SizeUTF8() => TTF_SizeText()
 
 The following functions have been removed:
 * TTF_ByteSwappedUNICODE()
@@ -96,11 +96,6 @@ The following functions have been removed:
 * TTF_RenderUNICODE_Solid()
 * TTF_RenderUNICODE_Solid_Wrapped()
 * TTF_SizeUNICODE()
-
-The following macros have been removed:
-* TTF_GetError() => SDL_GetError()
-* TTF_SetError() => SDL_SetError()
-
 The following symbols have been renamed:
 * TTF_WRAPPED_ALIGN_CENTER => TTF_HORIZONTAL_ALIGN_CENTER
 * TTF_WRAPPED_ALIGN_LEFT => TTF_HORIZONTAL_ALIGN_LEFT

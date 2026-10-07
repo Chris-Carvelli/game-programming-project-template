@@ -1,6 +1,6 @@
 /*
   SDL_ttf:  A companion library to SDL for working with TrueType (tm) fonts
-  Copyright (C) 2001-2026 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 2001-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,13 +28,15 @@ typedef struct GlyphHashtableKey {
     Uint32 glyph_index;
 } GlyphHashtableKey;
 
-static Uint32 SDLCALL SDL_HashGlyphHashtableKey(void *userdata, const void *key)
+static Uint32 SDLCALL SDL_HashGlyphHashtableKey(void *unused, const void *key)
 {
+    (void)unused;
     return SDL_murmur3_32(key, sizeof(GlyphHashtableKey), 0);
 }
 
-static bool SDLCALL SDL_KeyMatchGlyphHashtableKey(void *userdata, const void *a, const void *b)
+static bool SDLCALL SDL_KeyMatchGlyphHashtableKey(void *unused, const void *a, const void *b)
 {
+    (void)unused;
     GlyphHashtableKey *A = (GlyphHashtableKey *)a;
     GlyphHashtableKey *B = (GlyphHashtableKey *)b;
     return (A->font == B->font && A->glyph_index == B->glyph_index);

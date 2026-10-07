@@ -1,6 +1,6 @@
 /*
   SDL_ttf:  A companion library to SDL for working with TrueType (tm) fonts
-  Copyright (C) 2001-2026 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 2001-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -651,26 +651,20 @@ static AtlasDrawSequence *CreateDrawSequence(TTF_DrawOperation *ops, int num_ops
     sequence->num_vertices = count * 4;
     sequence->num_indices = count * 6;
 
-    sequence->uv = (SDL_FPoint *)SDL_malloc(count * 4 * sizeof(*sequence->uv));
-    if (!sequence->uv) {
-        DestroyDrawSequence(sequence);
-        return NULL;
-    }
-
-    float *uv = (float *)sequence->uv;
     if (texture) {
+        AtlasGlyph *glyph;
+
+        sequence->uv = (SDL_FPoint *)SDL_malloc(count * sizeof(glyph->texcoords));
+        if (!sequence->uv) {
+            DestroyDrawSequence(sequence);
+            return NULL;
+        }
+
+        float *uv = (float *)sequence->uv;
         for (int i = 0; i < count; ++i) {
-            AtlasGlyph *glyph = (AtlasGlyph *)ops[i].copy.reserved;
+            glyph = (AtlasGlyph *)ops[i].copy.reserved;
             SDL_memcpy(uv, glyph->texcoords, sizeof(glyph->texcoords));
             uv += SDL_arraysize(glyph->texcoords);
-        }
-    } else {
-        for (int i = 0; i < count; ++i) {
-            /* Normalized [0,1] rectangle coords for procedural edge AA */
-            *uv++ = 0.0f; *uv++ = 0.0f;
-            *uv++ = 1.0f; *uv++ = 0.0f;
-            *uv++ = 1.0f; *uv++ = 1.0f;
-            *uv++ = 0.0f; *uv++ = 1.0f;
         }
     }
 
@@ -698,13 +692,6 @@ static AtlasDrawSequence *CreateDrawSequence(TTF_DrawOperation *ops, int num_ops
         float maxx = (float)(dst->x + dst->w);
         float miny = (float)dst->y;
         float maxy = (float)(dst->y + dst->h);
-
-        /* Ensure fill rects are at least 3px tall for shader-based edge AA */
-        if (op->cmd == TTF_DRAW_COMMAND_FILL && dst->h < 3) {
-            float pad = (3.0f - dst->h) / 2.0f;
-            miny -= pad;
-            maxy += pad;
-        }
 
         // In the GPU API postive y-axis is upwards so the signs of the y-coords is reversed
         *xy++ =  minx;
@@ -885,9 +872,11 @@ static void DestroyEngineData(TTF_GPUTextEngineData *data)
     SDL_free(data);
 }
 
-static void SDLCALL NukeFontData(void *userdata, const void *key, const void *value)
+static void SDLCALL NukeFontData(void *unused, const void *key, const void *value)
 {
     TTF_GPUTextEngineFontData *data = (TTF_GPUTextEngineFontData *)value;
+    (void)key;
+    (void)unused;
     DestroyFontData(data);
 }
 
@@ -949,6 +938,7 @@ static void SDLCALL DestroyText(void *userdata, TTF_Text *text)
 {
     TTF_GPUTextEngineTextData *data = (TTF_GPUTextEngineTextData *)text->internal->engine_text;
 
+    (void)userdata;
     DestroyTextData(data);
 }
 
@@ -970,14 +960,14 @@ TTF_TextEngine *TTF_CreateGPUTextEngine(SDL_GPUDevice *device)
         SDL_SetError("Failed to create GPU text engine.");
         return NULL;
     }
-    SDL_SetPointerProperty(props, TTF_PROP_GPU_TEXT_ENGINE_DEVICE_POINTER, device);
+    SDL_SetPointerProperty(props, TTF_PROP_GPU_TEXT_ENGINE_DEVICE, device);
 
     return TTF_CreateGPUTextEngineWithProperties(props);
 }
 
 TTF_TextEngine *TTF_CreateGPUTextEngineWithProperties(SDL_PropertiesID props)
 {
-    SDL_GPUDevice *device = SDL_GetPointerProperty(props, TTF_PROP_GPU_TEXT_ENGINE_DEVICE_POINTER, NULL);
+    SDL_GPUDevice *device = SDL_GetPointerProperty(props, TTF_PROP_GPU_TEXT_ENGINE_DEVICE, NULL);
     if (!device) {
         SDL_SetError("Failed to create GPU text engine: Invalid device.");
         return NULL;
@@ -988,10 +978,9 @@ TTF_TextEngine *TTF_CreateGPUTextEngineWithProperties(SDL_PropertiesID props)
         return NULL;
     }
 
-    int atlas_texture_size = (int)SDL_GetNumberProperty(props, TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER, 1024);
+    int atlas_texture_size = (int)SDL_GetNumberProperty(props, TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE, 1024);
     if (atlas_texture_size <= 0) {
         SDL_SetError("Failed to create GPU text engine: Invalid texture atlas size.");
-        SDL_free(engine);
         return NULL;
     }
 

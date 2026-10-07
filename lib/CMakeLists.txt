@@ -17,18 +17,7 @@ add_subdirectory(SDL_mixer)
 add_subdirectory(SDL_ttf)
 add_subdirectory(imgui)
 add_subdirectory(box2d)
-add_subdirectory(glm)
 
 
 set(STATIC_LIBS  ${STATIC_LIBS};SDL3::SDL3;SDL3_mixer::SDL3_mixer;SDL3_ttf::SDL3_ttf;box2d::box2d;imgui CACHE INTERNAL "STATIC_LIBS")
-set(INCLUDE_DIRS ${INCLUDE_DIRS};${CMAKE_CURRENT_SOURCE_DIR}/stb;${CMAKE_CURRENT_SOURCE_DIR}/stb;${CMAKE_CURRENT_SOURCE_DIR}/imgui;${CMAKE_CURRENT_SOURCE_DIR}/glm;${CMAKE_CURRENT_SOURCE_DIR}/rapidjson CACHE INTERNAL "INCLUDE_DIRS")
-
-message("424243: include dirs:")
-foreach(dir ${INCLUDE_DIRS})
-    message("\t" ${dir})
-endforeach()
-
-message("424243: static libs:")
-foreach(lib ${STATIC_LIBS})
-    message("\t" ${lib})
-endforeach()
+set(INCLUDE_DIRS ${INCLUDE_DIRS};${CMAKE_CURRENT_SOURCE_DIR}/stb;${CMAKE_CURRENT_SOURCE_DIR}/stb;${CMAKE_CURRENT_SOURCE_DIR}/imgui;${CMAKE_CURRENT_SOURCE_DIR}/glm/include;${CMAKE_CURRENT_SOURCE_DIR}/rapidjson CACHE INTERNAL "INCLUDE_DIRS")

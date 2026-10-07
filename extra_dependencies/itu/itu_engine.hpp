@@ -47,43 +47,31 @@
 #include <glm/gtx/matrix_decompose.hpp>       // E08
 #include <glm/gtx/string_cast.hpp>
 
-#include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
-
-#ifdef ITU_SYS_RENDER_3D_IMPLEMENTATION
-// assimp: https://assimp.org/
-// "library that loads various 3D file formats into a shared, in-memory format. It supports more than 40 file formats for import and a growing selection of file formats for export"
-#include <assimp/scene.h>                     // E08
-#include <assimp/cimport.h>                   // E08
-#include <assimp/postprocess.h>               // E08
-#endif // ITU_SYS_RENDER_3D_IMPLEMENTATION
+// rapidjson: https://github.com/Tencent/rapidjson
+// "JSON parser and generator for C++""
+#include <rapidjson/document.h>               // E06
+#include <rapidjson/writer.h>                 // E06
+#include <rapidjson/stringbuffer.h>           // E06
+#include <rapidjson/filereadstream.h>         // E06
+#include <rapidjson/filewritestream.h>        // E06
 
 // ITU ENGINE
 
 // low level libraries (no context or memory allocation involved)
-#include <itu_common.hpp>                     // E02 // cleaned
-#include <itu_lib_render_screen.hpp>          // E02 // cleaned
-#include <itu_lib_overlaps.hpp>               // E02 // cleaned
+#include <itu_common.hpp>                     // E02
+#include <itu_lib_render_screen.hpp>          // E02
+#include <itu_lib_overlaps.hpp>               // E02
 #include <itu_lib_transform2d.hpp>            // E03
 #include <itu_lib_fileutils.hpp>              // E08
 #include <itu_lib_math3d.hpp>                 // E08
 #include <itu_lib_bitmanipulation.hpp>        // E05
 
 // mid level libraries, rely on context
-#include <itu_lib_context.hpp>         // E03 // cleaned
+#include <itu_lib_context.hpp>         // E03
 #include <utils/itu_utils_box2d.hpp>   // E04
-#include <itu_lib_render2d.hpp>        // E03 // clenaed
-// #include <itu_sys_render3d.hpp>
-#include <itu_lib_imgui.hpp>           // E03 // clenaed (mostly)
-#include <itu_sys_physics.hpp>         // E05 
-
-// high level libraries (handle resources, entities, and scenes)
-// #include <itu_sys_storage_resource.hpp>
-// #include <itu_sys_ecs.hpp>
-// #include <itu_sys_ecs_internal.hpp>
-// #include <debug_ui/itu_sys_ecs_debug_ui.hpp>
-
+#include <itu_lib_render2d.hpp>        // E03
+#include <itu_lib_imgui.hpp>           // E03
+#include <itu_sys_physics.hpp>         // E05
 
 // NOTE: some static code analysis will throw an error here mentioning "file cannot be included
 //       recursively", or something similar. This is not a real error that will happen when we
@@ -94,20 +82,12 @@
 	#include <itu_lib_fileutils.cpp>
 	#include <itu_lib_math3d.cpp>
 
-	#include <itu_lib_context.cpp>         // E03 // cleaned
+	#include <itu_lib_context.cpp>         // E03
 	#include <utils/itu_utils_box2d.cpp>   // E04
 
-	#include <itu_lib_render2d.cpp>        // E03 // clenaed
+	#include <itu_lib_render2d.cpp>        // E03
 
-	#ifdef ITU_SYS_RENDER_3D_IMPLEMENTATION
-		#include <itu_sys_render3d.cpp>
-	#endif
-
-	#include <itu_lib_imgui.cpp>           // E03 // clenaed (mostly)
-	#include <itu_sys_physics.cpp>         // E05 
-
-	// #include <itu_sys_storage_resource.cpp>
-	// #include <itu_sys_ecs.cpp>
-	// #include <debug_ui/itu_sys_ecs_debug_ui.cpp>
+	#include <itu_lib_imgui.cpp>           // E03
+	#include <itu_sys_physics.cpp>         // E05
 #endif
 #endif // ITU_ENGINE_HPP

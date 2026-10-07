@@ -8,8 +8,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # See docs/release_checklist.md
 set(MAJOR_VERSION 3)
-set(MINOR_VERSION 3)
-set(MICRO_VERSION 0)
+set(MINOR_VERSION 2)
+set(MICRO_VERSION 4)
 set(SDL_REQUIRED_VERSION 3.4.0)
 
 project(SDL3_mixer
@@ -151,7 +151,7 @@ cmake_dependent_option(SDLMIXER_MP3_MPG123_SHARED "Dynamically load mpg123" "${S
 
 option(SDLMIXER_MIDI "Enable MIDI audio" ON)
 
-cmake_dependent_option(SDLMIXER_MIDI_FLUIDSYNTH "Support FluidSynth MIDI output" ON SDLMIXER_MIDI OFF)
+cmake_dependent_option(SDLMIXER_MIDI_FLUIDSYNTH "Support FluidSynth MIDI output" ON "SDLMIXER_MIDI;NOT SDLMIXER_VENDORED" OFF)
 cmake_dependent_option(SDLMIXER_MIDI_FLUIDSYNTH_SHARED "Dynamically load libfluidsynth" "${SDLMIXER_DEPS_SHARED}" SDLMIXER_MIDI_FLUIDSYNTH OFF)
 
 cmake_dependent_option(SDLMIXER_MIDI_TIMIDITY "Support timidity MIDI output" ON SDLMIXER_MIDI OFF)
@@ -336,7 +336,6 @@ if(SDLMIXER_BUILD_SHARED_LIBS)
 endif()
 
 set(INSTALL_EXTRA_TARGETS)
-set(INSTALL_EXTRA_CMAKE_MODULES)
 set(PC_LIBS)
 set(PC_REQUIRES)
 set(SDLMIXER_BACKENDS)
@@ -411,7 +410,6 @@ if(SDLMIXER_OPUS)
             message(STATUS "Using system opusfile")
             if(NOT SDLMIXER_OPUS_SHARED)
                 list(APPEND PC_REQUIRES opusfile)
-                list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/FindOgg.cmake cmake/FindOpus.cmake cmake/FindOpusFile.cmake)
             endif()
         else()
             message(${fatal_error} "opusfile NOT found")
@@ -485,7 +483,6 @@ if(SDLMIXER_VORBIS_TREMOR)
         if(tremor_FOUND)
             if(NOT SDLMIXER_VORBIS_TREMOR_SHARED)
                 list(APPEND PC_REQUIRES vorbisidec)
-                list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findtremor.cmake)
             endif()
             set(SDLMIXER_VORBIS_TREMOR_ENABLED TRUE)
         else()
@@ -536,7 +533,6 @@ if(SDLMIXER_VORBIS_VORBISFILE)
         endif()
         if(NOT SDLMIXER_VORBIS_VORBISFILE_SHARED)
             list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:vorbisfile>)
-            list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/FindVorbis.cmake)
         endif()
     elseif(SDLMIXER_VORBIS_VORBISFILE_SHARED AND DEFINED SDLMIXER_DYNAMIC_VORBIS_VORBISFILE AND EXISTS "${SDLMIXER_DYNAMIC_VORBIS_VORBISFILE}")
         message(STATUS "${PROJECT_NAME}: Using vorbisfile from CMake variable")
@@ -606,7 +602,6 @@ if(SDLMIXER_FLAC_LIBFLAC)
         endif()
         if(NOT SDLMIXER_FLAC_LIBFLAC_SHARED)
             list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:FLAC::FLAC> -l$<TARGET_FILE_BASE_NAME:ogg>)
-            list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/FindFLAC.cmake)
         endif()
     elseif(SDLMIXER_FLAC_LIBFLAC_SHARED AND DEFINED SDLMIXER_DYNAMIC_FLAC_LIBFLAC AND EXISTS "${SDLMIXER_DYNAMIC_FLAC_LIBFLAC}")
         message(STATUS "${PROJECT_NAME}: Using libflac from CMake variable")
@@ -691,7 +686,6 @@ if(SDLMIXER_GME)
         endif()
         if(NOT SDLMIXER_GME_SHARED)
             list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:gme>)
-            list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findgme.cmake)
         endif()
     elseif(SDLMIXER_GME_SHARED AND DEFINED SDLMIXER_DYNAMIC_GME AND EXISTS "${SDLMIXER_DYNAMIC_GME}")
         message(STATUS "${PROJECT_NAME}: Using libgme from CMake variable")
@@ -703,7 +697,6 @@ if(SDLMIXER_GME)
             message(STATUS "Using system libgme")
             if(NOT SDLMIXER_GME_SHARED)
                 list(APPEND PC_REQUIRES libgme)
-                list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findgme.cmake)
             endif()
         else()
             message(${fatal_error} "libgme NOT found")
@@ -759,7 +752,6 @@ if(SDLMIXER_MOD_XMP)
         endif()
         if(NOT SDLMIXER_MOD_XMP_SHARED)
             list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:${tgt_xmp}>)
-            list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findlibxmp.cmake)
         endif()
     else()
         if(SDLMIXER_MOD_XMP_LITE)
@@ -779,7 +771,6 @@ if(SDLMIXER_MOD_XMP)
                 set(xmp_name libxmp-lite)
                 if(NOT SDLMIXER_MOD_XMP_SHARED)
                     list(APPEND PC_REQUIRES libxmp-lite)
-                    list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findlibxmp-lite.cmake)
                 endif()
             else()
                 message(${fatal_error} "libxmp-lite NOT found")
@@ -865,7 +856,6 @@ if(SDLMIXER_MP3_MPG123)
         endif()
         if(NOT SDLMIXER_MP3_MPG123_SHARED)
             list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:MPG123::mpg123>)
-            list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findmpg123.cmake)
         endif()
     elseif(SDLMIXER_MP3_MPG123_SHARED AND DEFINED SDLMIXER_DYNAMIC_MP3_MPG123 AND EXISTS "${SDLMIXER_DYNAMIC_MP3_MPG123}")
         message(STATUS "${PROJECT_NAME}: Using mpg123 from CMake variable")
@@ -913,31 +903,9 @@ list(APPEND SDLMIXER_BACKENDS MIDI_FLUIDSYNTH)
 set(SDLMIXER_MIDI_FLUIDSYNTH_ENABLED FALSE)
 if(SDLMIXER_MIDI_FLUIDSYNTH)
     if(SDLMIXER_VENDORED)
-        set(SDLMIXER_MIDI_FLUIDSYNTH_ENABLED TRUE)
-        message(STATUS "Using vendored fluidsynth")
-        sdl_check_project_in_subfolder(external/fluidsynth fluidsynth SDLMIXER_VENDORED)
-        set(disabled_opts enable-alsa  enable-aufile enable-dbus enable-ipv6 enable-jack enable-ladspa
-          enable-libinstpatch enable-libsndfile enable-midishare enable-opensles enable-oboe enable-network
-          enable-oss enable-dsound enable-wasapi enable-waveout enable-winmidi enable-sdl3 enable-pulseaudio
-          enable-pipewire enable-readline enable-threads enable-openmp enable-unicode enable-native enable-signalsmith
-          enable-framework enable-systemd enable-coreaudio enable-coremidi enable-dart enable-kai)
-        foreach(opt ${disabled_opts})
-          set(${opt} FALSE CACHE BOOL "FluidSynth ${opt} option")
-        endforeach()
-        enable_language(CXX)
-        set(osal "cpp11" CACHE STRING "FluidSynth OS Abstraction layer")
-        set(BUILD_SHARED_LIBS "${SDLMIXER_MIDI_FLUIDSYNTH_SHARED}")
-        add_subdirectory(external/fluidsynth external/fluidsynth-build EXCLUDE_FROM_ALL)
-        register_license(fluidsynth external/fluidsynth/LICENSE)
-        if(NOT TARGET FluidSynth::libfluidsynth)
-            add_library(FluidSynth::libfluidsynth ALIAS libfluidsynth)
-        endif()
-        if(SDLMIXER_MIDI_FLUIDSYNTH_SHARED OR NOT SDLMIXER_BUILD_SHARED_LIBS)
-            list(APPEND INSTALL_EXTRA_TARGETS libfluidsynth)
-        endif()
-        if(NOT SDLMIXER_MIDI_FLUIDSYNTH_SHARED)
-            list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:FluidSynth::libfluidsynth>)
-        endif()
+        message(STATUS "Using vendored FluidSynth")
+        message(${fatal_error} "FluidSynth is not vendored.")
+        set(SDLMIXER_MIDI_FLUIDSYNTH_ENABLED FALSE)
     elseif(SDLMIXER_MIDI_FLUIDSYNTH_SHARED AND DEFINED SDLMIXER_DYNAMIC_MIDI_FLUIDSYNTH AND EXISTS "${SDLMIXER_DYNAMIC_MIDI_FLUIDSYNTH}")
         message(STATUS "${PROJECT_NAME}: Using FluidSynth from CMake variable")
         set(SDLMIXER_MIDI_FLUIDSYNTH_ENABLED TRUE)
@@ -948,7 +916,6 @@ if(SDLMIXER_MIDI_FLUIDSYNTH)
             message(STATUS "Using system FluidSynth")
             if(NOT SDLMIXER_MIDI_FLUIDSYNTH_SHARED)
                 list(APPEND PC_REQUIRES fluidsynth)
-                list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/FindFluidSynth.cmake)
             endif()
         else()
             message(${fatal_error} "FluidSynth NOT found")
@@ -989,8 +956,6 @@ if(SDLMIXER_MIDI_TIMIDITY)
         src/timidity/playmidi.c
         src/timidity/readmidi.c
         src/timidity/resample.c
-        src/timidity/readsbk.c
-        src/timidity/sndfont.c
         src/timidity/tables.c
         src/timidity/timidity.c
     )
@@ -1048,7 +1013,6 @@ if(SDLMIXER_WAVPACK)
         endif()
         if(NOT SDLMIXER_WAVPACK_SHARED)
             list(APPEND PC_LIBS -l$<TARGET_FILE_BASE_NAME:WavPack::WavPack>)
-            list(APPEND INSTALL_EXTRA_CMAKE_MODULES cmake/Findwavpack.cmake)
         endif()
         target_compile_definitions(${sdl3_mixer_target_name} PRIVATE HAVE_WAVPACK_H)
     elseif(SDLMIXER_WAVPACK_SHARED AND DEFINED SDLMIXER_DYNAMIC_WAVPACK AND EXISTS "${SDLMIXER_DYNAMIC_WAVPACK}")
@@ -1158,11 +1122,22 @@ if(SDLMIXER_INSTALL)
           DESTINATION "${SDLMIXER_INSTALL_CMAKEDIR}"
           COMPONENT devel
     )
-    if(INSTALL_EXTRA_CMAKE_MODULES)
+    if(NOT SDLMIXER_VENDORED)
         install(
             FILES
-                ${INSTALL_EXTRA_CMAKE_MODULES}
                 cmake/PkgConfigHelper.cmake
+                cmake/FindFLAC.cmake
+                cmake/FindFluidSynth.cmake
+                cmake/Findgme.cmake
+                cmake/Findlibxmp.cmake
+                cmake/Findlibxmp-lite.cmake
+                cmake/FindOgg.cmake
+                cmake/FindOpus.cmake
+                cmake/FindOpusFile.cmake
+                cmake/Findmpg123.cmake
+                cmake/FindVorbis.cmake
+                cmake/Findtremor.cmake
+                cmake/Findwavpack.cmake
             DESTINATION "${SDLMIXER_INSTALL_CMAKEDIR}"
             COMPONENT devel
         )
@@ -1197,11 +1172,10 @@ if(SDLMIXER_INSTALL)
 
     string(JOIN " " PC_REQUIRES ${PC_REQUIRES})
     string(JOIN " " PC_LIBS ${PC_LIBS})
-    configure_file(cmake/sdl3-mixer.pc.in sdl3-mixer.pc.pre-config @ONLY)
-    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sdl3-mixer-$<CONFIG>.pc" INPUT "${CMAKE_CURRENT_BINARY_DIR}/sdl3-mixer.pc.pre-config")
+    configure_file(cmake/sdl3-mixer.pc.in sdl3-mixer.pc @ONLY)
 
     # Always install sdl3-mixer.pc file: libraries might be different between config modes
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/sdl3-mixer-$<CONFIG>.pc" RENAME "sdl3-mixer.pc"
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/sdl3-mixer.pc"
         DESTINATION "${SDLMIXER_PKGCONFIG_INSTALLDIR}" COMPONENT devel)
 
     install(FILES "LICENSE.txt"

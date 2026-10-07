@@ -1,6 +1,6 @@
 /*
   showfont:  An example of using the SDL_ttf library with 2D graphics.
-  Copyright (C) 2001-2026 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 2001-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -258,18 +258,6 @@ static void HandleKeyDown(Scene *scene, SDL_Event *event)
             /* Decrease font size */
             ptsize = TTF_GetFontSize(scene->font);
             TTF_SetFontSize(scene->font, ptsize - 1.0f);
-        }
-        break;
-
-    case SDLK_COMMA:
-        if (event->key.mod & SDL_KMOD_CTRL) {
-            TTF_SetFontCharSpacing(scene->font, TTF_GetFontCharSpacing(scene->font) - 1);
-        }
-        break;
-
-    case SDLK_PERIOD:
-        if (event->key.mod & SDL_KMOD_CTRL) {
-            TTF_SetFontCharSpacing(scene->font, TTF_GetFontCharSpacing(scene->font) + 1);
         }
         break;
 

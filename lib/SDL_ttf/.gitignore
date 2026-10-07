@@ -1,6 +1,5 @@
 build/
 buildbot/
-!build-scripts/
 /VERSION.txt
 
 *.so

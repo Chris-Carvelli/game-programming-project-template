@@ -1,6 +1,6 @@
 /*
   SDL_ttf:  A companion library to SDL for working with TrueType (tm) fonts
-  Copyright (C) 2001-2026 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 2001-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -786,9 +786,11 @@ static void DestroyEngineData(TTF_RendererTextEngineData *data)
     SDL_free(data);
 }
 
-static void SDLCALL NukeFontData(void *userdata, const void *key, const void *value)
+static void SDLCALL NukeFontData(void *unused, const void *key, const void *value)
 {
     TTF_RendererTextEngineFontData *data = (TTF_RendererTextEngineFontData *)value;
+    (void)key;
+    (void)unused;
     DestroyFontData(data);
 }
 
@@ -849,6 +851,7 @@ static void SDLCALL DestroyText(void *userdata, TTF_Text *text)
 {
     TTF_RendererTextEngineTextData *data = (TTF_RendererTextEngineTextData *)text->internal->engine_text;
 
+    (void)userdata;
     DestroyTextData(data);
 }
 
@@ -859,14 +862,14 @@ TTF_TextEngine *TTF_CreateRendererTextEngine(SDL_Renderer *renderer)
         SDL_SetError("Failed to create renderer text engine.");
         return NULL;
     }
-    SDL_SetPointerProperty(props, TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER_POINTER, renderer);
+    SDL_SetPointerProperty(props, TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER, renderer);
 
     return TTF_CreateRendererTextEngineWithProperties(props);
 }
 
 TTF_TextEngine *TTF_CreateRendererTextEngineWithProperties(SDL_PropertiesID props)
 {
-    SDL_Renderer *renderer = SDL_GetPointerProperty(props, TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER_POINTER, NULL);
+    SDL_Renderer *renderer = SDL_GetPointerProperty(props, TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER, NULL);
     if (!renderer) {
         SDL_SetError("Failed to create renderer text engine: Invalid renderer.");
         return NULL;
@@ -877,14 +880,9 @@ TTF_TextEngine *TTF_CreateRendererTextEngineWithProperties(SDL_PropertiesID prop
         return NULL;
     }
 
-    int max_atlas_texture_size = (int)SDL_GetNumberProperty(SDL_GetRendererProperties(renderer), SDL_PROP_RENDERER_MAX_TEXTURE_SIZE_NUMBER, 0);
-    int atlas_texture_size = (int)SDL_GetNumberProperty(props, TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE_NUMBER, 1024);
-    if (max_atlas_texture_size && atlas_texture_size > max_atlas_texture_size) {
-        atlas_texture_size = max_atlas_texture_size;
-    }
+    int atlas_texture_size = (int)SDL_GetNumberProperty(props, TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE, 1024);
     if (atlas_texture_size <= 0) {
         SDL_SetError("Failed to create renderer text engine: Invalid texture atlas size.");
-        SDL_free(engine);
         return NULL;
     }
 

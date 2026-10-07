@@ -89,19 +89,19 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(ProjectDir)..\include;$(ProjectDir)..\external\freetype\include;$(ProjectDir)..\external\harfbuzz;$(ProjectDir)..\external\harfbuzz\src;$(ProjectDir)..\external\plutosvg\source;$(ProjectDir)..\external\plutovg\include;$(ProjectDir)..\..\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(PlatformName)\$(Configuration);$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(ProjectDir)..\include;$(ProjectDir)..\external\freetype\include;$(ProjectDir)..\external\harfbuzz;$(ProjectDir)..\external\harfbuzz\src;$(ProjectDir)..\external\plutosvg\source;$(ProjectDir)..\external\plutovg\include;$(ProjectDir)..\..\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(PlatformName)\$(Configuration);$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)..\include;$(ProjectDir)..\external\freetype\include;$(ProjectDir)..\external\harfbuzz;$(ProjectDir)..\external\harfbuzz\src;$(ProjectDir)..\external\plutosvg\source;$(ProjectDir)..\external\plutovg\include;$(ProjectDir)..\..\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(PlatformName)\$(Configuration);$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)..\include;$(ProjectDir)..\external\freetype\include;$(ProjectDir)..\external\harfbuzz;$(ProjectDir)..\external\harfbuzz\src;$(ProjectDir)..\external\plutosvg\source;$(ProjectDir)..\external\plutovg\include;$(ProjectDir)..\..\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(PlatformName)\$(Configuration);$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\..\SDL\VisualC\$(PlatformName)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -266,7 +266,6 @@
     <ClCompile Include="..\external\plutovg\source\plutovg-path.c" />
     <ClCompile Include="..\external\plutovg\source\plutovg-rasterize.c" />
     <ClCompile Include="..\external\plutovg\source\plutovg-surface.c" />
-    <ClCompile Include="..\src\SDL_gl_textengine.c" />
     <ClCompile Include="..\src\SDL_gpu_textengine.c" />
     <ClCompile Include="..\src\SDL_hashtable.c" />
     <ClCompile Include="..\src\SDL_hashtable_ttf.c" />

@@ -3184,25 +3184,11 @@ static drmp3_bool32 drmp3_init_internal(drmp3* pMP3, drmp3_read_proc onRead, drm
                 drmp3_bool32 isInfo = DRMP3_FALSE;
                 const drmp3_uint8* pTagData;
                 const drmp3_uint8* pTagDataBeg;
-                const void* pDataBufferEnd = NULL;
-                size_t frameBytes;
 
                 pTagDataBeg = pFirstFrameData + DRMP3_HDR_SIZE + (bs.pos/8);
                 pTagData    = pTagDataBeg;
 
-                /*
-                We need to determine how many bytes are actually available in pTagData. Unfortunately this is different depending on
-                whether or not it's being decoded from memory or callbacks.
-                */
-                if (pMP3->memory.pData != NULL && pMP3->memory.dataSize > 0) {
-                    pDataBufferEnd = pMP3->memory.pData + pMP3->memory.dataSize;
-                } else {
-                    pDataBufferEnd = pMP3->pData + pMP3->dataCapacity;
-                }
-
-                frameBytes = DRMP3_MIN((size_t)firstFrameInfo.frame_bytes, (size_t)((drmp3_uint8*)pDataBufferEnd - pFirstFrameData));
-
-                if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 8) {
+                if (firstFrameInfo.frame_bytes - (size_t)(pTagData - pFirstFrameData) < 8) {
                     goto done_xing_info;    /* Frame too small for a Xing/Info tag. */
                 }
 
@@ -3217,7 +3203,7 @@ static drmp3_bool32 drmp3_init_internal(drmp3* pMP3, drmp3_read_proc onRead, drm
                     pTagData += 8;  /* Skip past the ID and flags. */
 
                     if (flags & 0x01) { /* FRAMES flag. */
-                        if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 4) {
+                        if (firstFrameInfo.frame_bytes - (size_t)(pTagData - pFirstFrameData) < 4) {
                             goto done_xing_info;    /* Invalid Xing/Info tag. */
                         }
 
@@ -3226,7 +3212,7 @@ static drmp3_bool32 drmp3_init_internal(drmp3* pMP3, drmp3_read_proc onRead, drm
                     }
 
                     if (flags & 0x02) { /* BYTES flag. */
-                        if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 4) {
+                        if (firstFrameInfo.frame_bytes - (size_t)(pTagData - pFirstFrameData) < 4) {
                             goto done_xing_info;    /* Invalid Xing/Info tag. */
                         }
 
@@ -3236,7 +3222,7 @@ static drmp3_bool32 drmp3_init_internal(drmp3* pMP3, drmp3_read_proc onRead, drm
                     }
 
                     if (flags & 0x04) { /* TOC flag. */
-                        if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 100) {
+                        if (firstFrameInfo.frame_bytes - (size_t)(pTagData - pFirstFrameData) < 100) {
                             goto done_xing_info;    /* Invalid Xing/Info tag. */
                         }
 
@@ -3245,23 +3231,19 @@ static drmp3_bool32 drmp3_init_internal(drmp3* pMP3, drmp3_read_proc onRead, drm
                     }
 
                     if (flags & 0x08) { /* SCALE flag. */
-                        if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 4) {
+                        if (firstFrameInfo.frame_bytes - (size_t)(pTagData - pFirstFrameData) < 4) {
                             goto done_xing_info;    /* Invalid Xing/Info tag. */
                         }
-
+                        
                         pTagData += 4;
                     }
 
                     /* At this point we're done with the Xing/Info header. Now we can look at the LAME data. */
-                    if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 1) {
-                        goto done_xing_info;    /* Not enough data left to check for a LAME header. */
-                    }
-
                     if (pTagData[0]) {
                         int delayInPCMFrames;
                         int paddingInPCMFrames;
 
-                        if (frameBytes < (size_t)(pTagData - pFirstFrameData) + 36) {
+                        if (firstFrameInfo.frame_bytes - (size_t)(pTagData - pFirstFrameData) < 36) {
                             goto done_xing_info;    /* Invalid Xing/Info tag. */
                         }
 

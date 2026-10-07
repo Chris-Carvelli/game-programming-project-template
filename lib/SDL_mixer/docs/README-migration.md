@@ -30,11 +30,9 @@ function name and a brief explanation about what to do with it.
 
 ## Things that are totally gone
 
-- Native MIDI has been removed (we can still play midi files like
-  other file formats, just not to native midi hardware). We have
-  ripped this piece out of SDL2_mixer and packaged it as a separate library
-  that can be used alongside SDL3_mixer, or without SDL_mixer at all:
-  https://github.com/libsdl-org/SDL_native_midi
+- Native MIDI has been removed. We have ripped this piece out of SDL2_mixer
+  and packaged it as a separate library that can be used alongside SDL3_mixer,
+  or without SDL_mixer at all: https://github.com/libsdl-org/SDL_native_midi
 
 - Mix_GetNumTracks(), Mix_StartTrack(), Mix_ModMusicJumpToOrder(),
   Mix_SetSoundFonts(), Mix_GetSoundFonts(), Mix_EachSoundFont(),
@@ -43,12 +41,6 @@ function name and a brief explanation about what to do with it.
   using SDL properties.
 
 - Mix_QuickLoad_WAV(): this was just too unsafe to offer.
-
-- Mix_SetMusicCMD(): this was messy and relied on Unix signals. If you need
-  to launch a program that makes sound outside of SDL_mixer, you can use
-  SDL3's SDL_CreateProcess() to start it in a portable way, but pausing
-  it will be difficult to do on some systems. It glib to give this advice,
-  even if the advice is good: consider just not doing this sort of thing.
 
 
 ## Including SDL3_mixer
@@ -282,7 +274,7 @@ MIX_PauseTrack() and MIX_ResumeTrack().
 ## Music state
 
 Mix_MusicDuration() became MIX_GetAudioDuration() and Mix_GetMusicPosition() became
-MIX_GetTrackPlaybackPosition(). Mix_SetMusicPosition() is now
+MIX_GetTrackPlaybackPosition(). MIX_SetMusicPosition() is now
 MIX_SetTrackPlaybackPosition().
 
 
@@ -307,7 +299,7 @@ can discuss it!
 - MIX_MINOR_VERSION => SDL_MIXER_MAJOR_VERSION
 - MIX_PATCHLEVEL => SDL_MIXER_MICRO_VERSION
 - MIX_VERSION => SDL_MIXER_VERSION
-- Mix_Linked_Version => MIX_Version
+- MIX_Linked_Version => MIX_Version
 - Mix_Version => MIX_Version
 - SDL_MIXER_COMPILEDVERSION => SDL_MIXER_VERSION
 - MIX_InitFlags => not needed in SDL3_mixer.
@@ -416,9 +408,4 @@ can discuss it!
 - Mix_GetTimidityCfg => no equivalent in SDL3_mixer.
 - Mix_GetChunk => MIX_GetTrackAudio or MIX_GetTrackAudioStream
 - Mix_CloseAudio => MIX_DestroyMixer
-- Mix_GetError => SDL_GetError
-- Mix_SetError => SDL_SetError
-- Mix_SetMusicCMD => no equivalent in SDL3_mixer. SDL_CreateProcess can launch external programs, though.
-- Mix_GetSynchroValue => no equivalent in SDL3_mixer.
-- Mix_SetSynchroValue => no equivalent in SDL3_mixer.
 

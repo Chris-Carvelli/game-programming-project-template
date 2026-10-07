@@ -29,8 +29,6 @@
     <ClCompile Include="..\..\src\timidity\playmidi.c" />
     <ClCompile Include="..\..\src\timidity\readmidi.c" />
     <ClCompile Include="..\..\src\timidity\resample.c" />
-    <ClCompile Include="..\..\src\timidity\readsbk.c" />
-    <ClCompile Include="..\..\src\timidity\sndfont.c" />
     <ClCompile Include="..\..\src\timidity\tables.c" />
     <ClCompile Include="..\..\src\timidity\timidity.c" />
   </ItemGroup>
@@ -43,8 +41,6 @@
     <ClInclude Include="..\..\src\timidity\playmidi.h" />
     <ClInclude Include="..\..\src\timidity\readmidi.h" />
     <ClInclude Include="..\..\src\timidity\resample.h" />
-    <ClInclude Include="..\..\src\timidity\sbk.h" />
-    <ClInclude Include="..\..\src\timidity\sflayer.h" />
     <ClInclude Include="..\..\src\timidity\tables.h" />
     <ClInclude Include="..\..\src\timidity\timidity.h" />
   </ItemGroup>

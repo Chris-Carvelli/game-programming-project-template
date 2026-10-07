@@ -175,18 +175,12 @@ class VisualStudio:
         assert msbuild_path.is_file(), "MSBuild.exe does not exist"
         return msbuild_path
 
-    def build(self, arch_platform: VsArchPlatformConfig, projects: list[Path], include_paths: list[str], lib_paths: list[str]):
+    def build(self, arch_platform: VsArchPlatformConfig, projects: list[Path]):
         assert projects, "Need at least one project to build"
 
         vsdev_cmd_str = f"\"{self.vsdevcmd}\" -arch={arch_platform.arch}"
         msbuild_cmd_str = " && ".join([f"\"{self.msbuild}\" \"{project}\" /m /p:BuildInParallel=true /p:Platform={arch_platform.platform} /p:Configuration={arch_platform.configuration}" for project in projects])
-        include_contents = "%INCLUDE%"
-        if include_paths:
-            include_contents = f"{';'.join(str(p) for p in include_paths)};" + include_contents
-        lib_contents = "%LIB%"
-        if lib_paths:
-            lib_contents = f"{';'.join(str(p) for p in lib_paths)};" + lib_contents
-        bat_contents = textwrap.dedent(f"{vsdev_cmd_str} && set INCLUDE={include_contents} && set LIB={lib_paths} && {msbuild_cmd_str}")
+        bat_contents = f"{vsdev_cmd_str} && {msbuild_cmd_str}\n"
         bat_path = Path(tempfile.gettempdir()) / "cmd.bat"
         with bat_path.open("w") as f:
             f.write(bat_contents)
@@ -273,12 +267,8 @@ class Archiver:
 
     def close(self):
         # Archiver is intentionally made invalid after this function
-        for zf in self._zip_files:
-            zf.close()
         del self._zip_files
         self._zip_files = None
-        for tf in self._tar_files:
-            tf.close()
         del self._tar_files
         self._tar_files = None
 
@@ -552,7 +542,6 @@ class AndroidApiVersion:
     def __repr__(self) -> str:
         return f"<{self.name} ({'.'.join(str(v) for v in self.ints)})>"
 
-ANDROID_ABI_EXTRA_LINK_OPTIONS = {}
 
 class Releaser:
     def __init__(self, release_info: dict, commit: str, revision: str, root: Path, dist_path: Path, section_printer: SectionPrinter, executer: Executer, cmake_generator: str, deps_path: Path, overwrite: bool, github: bool, fast: bool):
@@ -746,12 +735,6 @@ class Releaser:
                     member.name = "/".join(Path(member.name).parts[1:])
                 return member
             for dep in self.release_info.get("dependencies", {}):
-                if "command" in self.release_info["dependencies"][dep]:
-                    for arch, triplet in ARCH_TO_TRIPLET.items():
-                        shutil.copytree(self.deps_path / dep, str(mingw_deps_path / triplet), dirs_exist_ok=True)
-                        (mingw_deps_path / triplet / "bin").mkdir(exist_ok=True)
-                        (mingw_deps_path / triplet / "lib/pkgconfig").mkdir(exist_ok=True, parents=True)
-                    continue
                 extract_path = mingw_deps_path / f"extract-{dep}"
                 extract_path.mkdir()
                 with chdir(extract_path):
@@ -868,8 +851,8 @@ class Releaser:
                             f"cmake",
                             f"-S", str(self.root), "-B", str(build_path),
                             f"-DCMAKE_BUILD_TYPE={build_type}",
-                            f'''-DCMAKE_C_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}" "-I{str(mingw_deps_path / triplet)}/include"''',
-                            f'''-DCMAKE_CXX_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}" "-I{str(mingw_deps_path / triplet)}/include"''',
+                            f'''-DCMAKE_C_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}"''',
+                            f'''-DCMAKE_CXX_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}"''',
                             f"-DCMAKE_PREFIX_PATH={mingw_deps_path / triplet}",
                             f"-DCMAKE_INSTALL_PREFIX={install_path}",
                             f"-DCMAKE_INSTALL_INCLUDEDIR=include",
@@ -1030,7 +1013,6 @@ class Releaser:
         android_devel_file_tree = ArchiveFileTree()
 
         for android_abi in android_abis:
-            extra_link_options = ANDROID_ABI_EXTRA_LINK_OPTIONS.get(android_abi, "")
             with self.section_printer.group(f"Building for Android {android_api} {android_abi}"):
                 build_dir = self.root / "build-android" / f"{android_abi}-build"
                 install_dir = self.root / "install-android" / f"{android_abi}-install"
@@ -1041,12 +1023,8 @@ class Releaser:
                     "cmake",
                     "-S", str(self.root),
                     "-B", str(build_dir),
-                    # NDK 21e does not support -ffile-prefix-map
-                    # f'''-DCMAKE_C_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}"''',
-                    # f'''-DCMAKE_CXX_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}"''',
-                    f"-DANDROID_USE_LEGACY_TOOLCHAIN=0",
-                    f"-DCMAKE_EXE_LINKER_FLAGS={extra_link_options}",
-                    f"-DCMAKE_SHARED_LINKER_FLAGS={extra_link_options}",
+                    f'''-DCMAKE_C_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}"''',
+                    f'''-DCMAKE_CXX_FLAGS="-ffile-prefix-map={self.root}=/src/{self.project}"''',
                     f"-DCMAKE_TOOLCHAIN_FILE={cmake_toolchain_file}",
                     f"-DCMAKE_PREFIX_PATH={str(android_deps_path)}",
                     f"-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH",
@@ -1141,18 +1119,10 @@ class Releaser:
                 f.write(f"dep-path={self.deps_path.absolute()}\n")
 
         for dep, depinfo in self.release_info.get("dependencies", {}).items():
-            if "command" in depinfo:
-                (self.deps_path / dep).mkdir(exist_ok=True, parents=True)
-                command_args = configure_text_list(shlex.split(depinfo["command"]), context=self.get_context(extra_context={
-                    "DEPS_PATH": str(self.deps_path / dep),
-                }))
-                if command_args[0].endswith(".py"):
-                    command_args.insert(0, sys.executable)
-                self.executer.run(command_args)
-                continue
             startswith = depinfo["startswith"]
             dep_repo = depinfo["repo"]
-            dep_string_data = self.executer.check_output(["gh", "-R", dep_repo, "release", "list", "--exclude-drafts", "--exclude-pre-releases", "--json", "name,createdAt,tagName", "--jq", f'[.[]|select(.name|startswith("{startswith}"))]|max_by(.createdAt)']).strip()
+            # FIXME: dropped "--exclude-pre-releases"
+            dep_string_data = self.executer.check_output(["gh", "-R", dep_repo, "release", "list", "--exclude-drafts", "--json", "name,createdAt,tagName", "--jq", f'[.[]|select(.name|startswith("{startswith}"))]|max_by(.createdAt)']).strip()
             dep_data = json.loads(dep_string_data)
             dep_tag = dep_data["tagName"]
             dep_version = dep_data["name"]
@@ -1164,10 +1134,6 @@ class Releaser:
 
     def verify_dependencies(self):
         for dep, depinfo in self.release_info.get("dependencies", {}).items():
-            if "command" in depinfo:
-                command_matches = glob.glob(depinfo["artifact"], root_dir=self.deps_path)
-                assert len(command_matches) == 1, f"Exactly one archive matches command {dep} dependency: {command_matches}"
-                continue
             if "mingw" in self.release_info:
                 mingw_matches = glob.glob(self.release_info["mingw"]["dependencies"][dep]["artifact"], root_dir=self.deps_path)
                 assert len(mingw_matches) == 1, f"Exactly one archive matches mingw {dep} dependency: {mingw_matches}"
@@ -1199,12 +1165,7 @@ class Releaser:
             deps_path = self.root / "msvc-deps"
             shutil.rmtree(deps_path, ignore_errors=True)
             dep_roots = []
-            dep_includes = []
-            for dep in self.release_info.get("dependencies", []):
-                if "command" in self.release_info["dependencies"][dep]:
-                    dep_includes.append(self.deps_path / dep / "include")
-                    continue
-                depinfo = self.release_info["msvc"]["dependencies"][dep]
+            for dep, depinfo in self.release_info["msvc"].get("dependencies", {}).items():
                 dep_extract_path = deps_path / f"extract-{dep}"
                 msvc_zip = self.deps_path / glob.glob(depinfo["artifact"], root_dir=self.deps_path)[0]
                 with zipfile.ZipFile(msvc_zip, "r") as zf:
@@ -1214,21 +1175,13 @@ class Releaser:
                 dep_roots.append(contents_msvc_zip[0])
 
             for arch in self.release_info["msvc"].get("cmake", {}).get("archs", []):
-                self._build_msvc_cmake(arch_platform=self._arch_to_vs_platform(arch=arch), dep_roots=dep_roots, dep_includes=dep_includes)
+                self._build_msvc_cmake(arch_platform=self._arch_to_vs_platform(arch=arch), dep_roots=dep_roots)
         with self.section_printer.group("Create SDL VC development zip"):
             self._build_msvc_devel()
 
     def _build_msvc_msbuild(self, arch_platform: VsArchPlatformConfig, vs: VisualStudio):
         platform_context = self.get_context(arch_platform.extra_context())
-        include_paths = []
-        lib_paths = []
-        for dep in self.release_info.get("dependencies", {}):#release_info["msvc"].get("dependencies", {}).items():
-            if "command" in self.release_info["dependencies"][dep]:
-                include_paths.append(self.deps_path / dep / "include")
-                lib_paths.append(self.deps_path / dep / "lib")
-                lib_paths.append(self.deps_path / dep / "lib" / arch_platform.arch)
-                continue
-            depinfo = self.release_info["msvc"]["dependencies"][dep]
+        for dep, depinfo in self.release_info["msvc"].get("dependencies", {}).items():
             msvc_zip = self.deps_path / glob.glob(depinfo["artifact"], root_dir=self.deps_path)[0]
 
             src_globs = [configure_text(instr["src"], context=platform_context) for instr in depinfo["copy"]]
@@ -1276,7 +1229,7 @@ class Releaser:
                 shutil.copy(src=src, dst=dir_b_props)
 
         with self.section_printer.group(f"Build {arch_platform.arch} VS binary"):
-            vs.build(arch_platform=arch_platform, projects=projects, include_paths=include_paths, lib_paths=lib_paths)
+            vs.build(arch_platform=arch_platform, projects=projects)
 
         if self.dry:
             for b in built_paths:
@@ -1312,7 +1265,7 @@ class Releaser:
     def _arch_platform_to_install_path(self, arch_platform: VsArchPlatformConfig) -> Path:
         return self._arch_platform_to_build_path(arch_platform) / "prefix"
 
-    def _build_msvc_cmake(self, arch_platform: VsArchPlatformConfig, dep_roots: list[Path], dep_includes: list[Path]):
+    def _build_msvc_cmake(self, arch_platform: VsArchPlatformConfig, dep_roots: list[Path]):
         build_path = self._arch_platform_to_build_path(arch_platform)
         install_path = self._arch_platform_to_install_path(arch_platform)
         platform_context = self.get_context(extra_context=arch_platform.extra_context())
@@ -1328,7 +1281,7 @@ class Releaser:
         if not self.fast:
             for b in built_paths:
                 b.unlink(missing_ok=True)
-        cppflags = list(f"-I{inc}" for inc in dep_includes)
+
         shutil.rmtree(install_path, ignore_errors=True)
         build_path.mkdir(parents=True, exist_ok=True)
         with self.section_printer.group(f"Configure VC CMake project for {arch_platform.arch}"):
@@ -1341,8 +1294,6 @@ class Releaser:
                 "-DCMAKE_INSTALL_LIBDIR=lib",
                 f"-DCMAKE_BUILD_TYPE={build_type}",
                 f"-DCMAKE_INSTALL_PREFIX={install_path}",
-                f"-DCMAKE_C_FLAGS={shlex.join(cppflags)}",
-                f"-DCMAKE_CXX_FLAGS={shlex.join(cppflags)}",
                 # MSVC debug information format flags are selected by an abstraction
                 "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW",
                 # MSVC debug information format
@@ -1561,7 +1512,7 @@ def main(argv=None) -> int:
         if args.android_home is None or not Path(args.android_home).is_dir():
             parser.error("Invalid $ANDROID_HOME or --android-home: must be a directory containing the Android SDK")
         if args.android_ndk_home is None or not Path(args.android_ndk_home).is_dir():
-            parser.error("Invalid $ANDROID_NDK_HOME or --android-ndk-home: must be a directory containing the Android NDK")
+            parser.error("Invalid $ANDROID_NDK_HOME or --android_ndk_home: must be a directory containing the Android NDK")
         if args.android_api is None:
             with section_printer.group("Detect Android APIS"):
                 args.android_api = releaser._detect_android_api(android_home=args.android_home)
@@ -1579,7 +1530,7 @@ def main(argv=None) -> int:
             parser.error("Invalid --android-api, and/or could not be detected")
         android_api_path = Path(args.android_home) / f"platforms/{args.android_api.name}"
         if not android_api_path.is_dir():
-            logger.warning(f"Android API directory does not exist ({android_api_path})")
+            parser.error(f"Android API directory does not exist ({android_api_path})")
         with section_printer.group("Android arguments"):
             print(f"android_home     = {args.android_home}")
             print(f"android_ndk_home = {args.android_ndk_home}")

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...4.0)
+cmake_minimum_required(VERSION 3.16...3.28)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
   set(cmake_build_type_undefined 1)
@@ -8,8 +8,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # See docs/release_checklist.md
 set(MAJOR_VERSION 3)
-set(MINOR_VERSION 3)
-set(MICRO_VERSION 0)
+set(MINOR_VERSION 2)
+set(MICRO_VERSION 2)
 set(SDL_REQUIRED_VERSION 3.2.6)
 
 project(SDL3_ttf
@@ -99,7 +99,6 @@ cmake_dependent_option(SDLTTF_SAMPLES_INSTALL "Install the SDL3_ttf sample progr
 # For style consistency, create a SDLTTF_FREETYPE CMake variable. This variable is NOT configurable.
 set(SDLTTF_FREETYPE ON)
 set(SDLTTF_FREETYPE_VENDORED "${SDLTTF_VENDORED}")
-set(FREETYPE_REQUIRED_VERSION "2.8.0")
 
 set(HARFBUZZ_REQUIRED_VERSION "2.3.1")
 option(SDLTTF_HARFBUZZ "Use harfbuzz to improve text shaping" ON)
@@ -140,7 +139,6 @@ endif()
 add_library(${sdl3_ttf_target_name}
     src/SDL_hashtable.c
     src/SDL_hashtable_ttf.c
-    src/SDL_gl_textengine.c
     src/SDL_gpu_textengine.c
     src/SDL_renderer_textengine.c
     src/SDL_surface_textengine.c
@@ -161,8 +159,6 @@ target_compile_definitions(${sdl3_ttf_target_name} PRIVATE
     SDL_BUILD_MINOR_VERSION=${MINOR_VERSION}
     SDL_BUILD_MICRO_VERSION=${MICRO_VERSION}
 )
-# Make sure SDL3's include directory comes first
-target_include_directories(${sdl3_ttf_target_name} PRIVATE $<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(${sdl3_ttf_target_name} PUBLIC SDL3::Headers)
 if(SDLTTF_BUILD_SHARED_LIBS)
     target_link_libraries(${sdl3_ttf_target_name} PRIVATE SDL3::SDL3-shared)
@@ -193,14 +189,11 @@ if(NOT ANDROID)
         VERSION "${SO_VERSION}"
     )
     if(APPLE)
+        cmake_minimum_required(VERSION 3.17...3.28)
         set_target_properties(${sdl3_ttf_target_name} PROPERTIES
             MACHO_COMPATIBILITY_VERSION "${DYLIB_COMPAT_VERSION}"
             MACHO_CURRENT_VERSION "${DYLIB_CURRENT_VERSION}"
         )
-        set_property(TARGET ${sdl3_ttf_target_name} APPEND PROPERTY LINK_DEPENDS
-                "${PROJECT_SOURCE_DIR}/src/SDL_ttf.exports")
-        target_link_options(${sdl3_ttf_target_name} PRIVATE
-                "SHELL:-Wl,-exported_symbols_list,${PROJECT_SOURCE_DIR}/src/SDL_ttf.exports")
     endif()
 endif()
 if(SDLTTF_BUILD_SHARED_LIBS)
@@ -276,7 +269,7 @@ if(SDLTTF_HARFBUZZ)
         set(HAVE_FT_DONE_MM_VAR 1 CACHE BOOL "FT_Done_MM_Var" FORCE)
         set(HAVE_FT_GET_TRANSFORM 1 CACHE BOOL "FT_Get_Transform" FORCE)
         sdl_check_project_in_subfolder(external/harfbuzz harfbuzz SDLTTF_VENDORED)
-        add_subdirectory(external/harfbuzz external/harfbuzz-build EXCLUDE_FROM_ALL)
+        add_subdirectory(external/harfbuzz EXCLUDE_FROM_ALL)
         # harfbuzz is a c++ project, enable c++ here to ensure linking to the c++ standard library.
         enable_language(CXX)
         if(NOT TARGET harfbuzz::harfbuzz)
@@ -351,7 +344,7 @@ if(SDLTTF_FREETYPE)
         if(NOT EXISTS "${PROJECT_SOURCE_DIR}/external/freetype/CMakeLists.txt")
             message(FATAL_ERROR "No freetype sources found. Install a freetype development package or run the download script in the external folder.")
         endif()
-        add_subdirectory(external/freetype external/freetype-build EXCLUDE_FROM_ALL)
+        add_subdirectory(external/freetype EXCLUDE_FROM_ALL)
         if(NOT TARGET Freetype::Freetype)
             add_library(Freetype::Freetype ALIAS freetype)
         endif()
@@ -363,7 +356,7 @@ if(SDLTTF_FREETYPE)
         endif()
     else()
         message(STATUS "${PROJECT_NAME}: Using system freetype library")
-        find_package(Freetype "${FREETYPE_REQUIRED_VERSION}" REQUIRED)
+        find_package(Freetype REQUIRED)
         list(APPEND PC_REQUIRES freetype2)
         target_link_libraries(${sdl3_ttf_target_name} PRIVATE Freetype::Freetype)
     endif()
@@ -382,12 +375,11 @@ if(SDLTTF_PLUTOSVG)
         set(BUILD_SHARED_LIBS OFF)
         set(PLUTOSVG_ENABLE_FREETYPE ON CACHE BOOL "plutosvg enable freetype" FORCE)
         set(PLUTOSVG_BUILD_EXAMPLES OFF CACHE BOOL "plutosvg build examples" FORCE)
-        set(PLUTOVG_ENABLE_IMAGE_WRITE OFF CACHE BOOL "plutovg enable image write" FORCE)
         set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "plutovg build examples" FORCE)
         sdl_check_project_in_subfolder(external/plutovg plutovg SDLTTF_VENDORED)
-        add_subdirectory(external/plutovg external/plutovg-build EXCLUDE_FROM_ALL)
+        add_subdirectory(external/plutovg EXCLUDE_FROM_ALL)
         sdl_check_project_in_subfolder(external/plutosvg plutosvg SDLTTF_VENDORED)
-        add_subdirectory(external/plutosvg external/plutosvg-guild EXCLUDE_FROM_ALL)
+        add_subdirectory(external/plutosvg EXCLUDE_FROM_ALL)
         set(SDLTTF_PLUTOSVG_ENABLED TRUE)
         if(SDLTTF_BUILD_SHARED_LIBS)
             set(plutosvg_link_libraries plutosvg::plutosvg)
@@ -553,46 +545,35 @@ if(SDLTTF_INSTALL)
 endif()
 
 if(SDLTTF_SAMPLES)
-    function(add_sdl_ttf_example_executable TARGET)
-        if(ANDROID)
-            add_library(${TARGET} SHARED ${ARGN})
-        else()
-            add_executable(${TARGET} ${ARGN})
-        endif()
-        sdl_add_warning_options(${TARGET} WARNING_AS_ERROR ${SDLTTF_WERROR})
-        sdl_target_link_options_no_undefined(${TARGET})
-        target_link_libraries(${TARGET} PRIVATE SDL3_ttf::${sdl3_ttf_target_name})
-        target_link_libraries(${TARGET} PRIVATE ${sdl3_target_name})
-        if("c_std_99" IN_LIST CMAKE_C_COMPILE_FEATURES)
-            target_compile_features(${TARGET} PRIVATE c_std_99)
-        endif()
-
-        if(SDLTTF_SAMPLES_INSTALL)
-            install(TARGETS ${TARGET}
-                RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/installed-tests/SDL3_ttf"
-            )
-        endif()
-    endfunction()
-    add_sdl_ttf_example_executable(glfont examples/glfont.c)
-    add_sdl_ttf_example_executable(showfont examples/showfont.c examples/editbox.c)
-    add_sdl_ttf_example_executable(showfps examples/showfps.c)
-    add_sdl_ttf_example_executable(testapp examples/testapp.c)
-    add_sdl_ttf_example_executable(testgputext examples/testgputext.c)
-    add_sdl_ttf_example_executable(testgltext examples/testgltext.c)
+    add_executable(glfont examples/glfont.c)
+    add_executable(showfont examples/showfont.c examples/editbox.c)
+    add_executable(testapp examples/testapp.c)
+    add_executable(testgputext examples/testgputext.c)
 
     set(OpenGL_GL_PREFERENCE GLVND)
     find_package(OpenGL)
     if(TARGET OpenGL::OpenGL)
         target_compile_definitions(glfont PRIVATE HAVE_OPENGL)
         target_link_libraries(glfont PRIVATE OpenGL::OpenGL)
-        target_compile_definitions(testgltext PRIVATE HAVE_OPENGL)
-        target_link_libraries(testgltext PRIVATE OpenGL::OpenGL)
     elseif(TARGET OpenGL::GL)
         target_compile_definitions(glfont PRIVATE HAVE_OPENGL)
         target_link_libraries(glfont PRIVATE OpenGL::GL)
-        target_compile_definitions(testgltext PRIVATE HAVE_OPENGL)
-        target_link_libraries(testgltext PRIVATE OpenGL::GL)
     endif()
+
+    foreach(prog glfont showfont testapp testgputext)
+        sdl_add_warning_options(${prog} WARNING_AS_ERROR ${SDLTTF_WERROR})
+        target_link_libraries(${prog} PRIVATE SDL3_ttf::${sdl3_ttf_target_name})
+        target_link_libraries(${prog} PRIVATE ${sdl3_target_name})
+        if("c_std_99" IN_LIST CMAKE_C_COMPILE_FEATURES)
+          target_compile_features(${prog} PRIVATE c_std_99)
+        endif()
+
+        if(SDLTTF_SAMPLES_INSTALL)
+            install(TARGETS ${prog}
+                RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+            )
+        endif()
+    endforeach()
 endif()
 
 set(available_deps)

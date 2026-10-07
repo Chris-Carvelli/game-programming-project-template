@@ -208,7 +208,7 @@ typedef struct MIX_Group MIX_Group;
  *
  * \since This macro is available since SDL_mixer 3.0.0.
  */
-#define SDL_MIXER_MINOR_VERSION   3
+#define SDL_MIXER_MINOR_VERSION   2
 
 /**
  * The current micro (or patchlevel) version of the SDL_mixer headers.
@@ -217,7 +217,7 @@ typedef struct MIX_Group MIX_Group;
  *
  * \since This macro is available since SDL_mixer 3.0.0.
  */
-#define SDL_MIXER_MICRO_VERSION   0
+#define SDL_MIXER_MICRO_VERSION   4
 
 /**
  * This is the current version number macro of the SDL_mixer headers.
@@ -572,9 +572,9 @@ extern SDL_DECLSPEC void SDLCALL MIX_LockMixer(MIX_Mixer *mixer);
  * internal state another thread. Those other threads will block until the
  * mixer is unlocked again.
  *
- * Under the hood, this function calls SDL_UnlockMutex(), so all the same
- * rules apply: the lock can be recursive, it must be unlocked the same number
- * of times from the same thread that locked it, etc.
+ * Under the hood, this function calls SDL_LockMutex(), so all the same rules
+ * apply: the lock can be recursive, it must be unlocked the same number of
+ * times from the same thread that locked it, etc.
  *
  * Unlocking a NULL mixer is a safe no-op.
  *
@@ -746,7 +746,8 @@ extern SDL_DECLSPEC MIX_Audio * SDLCALL MIX_LoadAudioNoCopy(MIX_Mixer *mixer, co
  *
  * SDL_PropertiesID are discussed in
  * [SDL's documentation](https://wiki.libsdl.org/SDL3/CategoryProperties)
- * . These are the supported properties:
+ * .
+ * These are the supported properties:
  *
  * - `MIX_PROP_AUDIO_LOAD_IOSTREAM_POINTER`: a pointer to an SDL_IOStream to
  *   be used to load audio data. Required. This stream must be able to seek!
@@ -2539,7 +2540,7 @@ extern SDL_DECLSPEC bool SDLCALL MIX_SetTrackFrequencyRatio(MIX_Track *track, fl
  *
  * \since This function is available since SDL_mixer 3.0.0.
  *
- * \sa MIX_SetTrackFrequencyRatio
+ * \sa MIX_GetTrackFrequencyRatio
  */
 extern SDL_DECLSPEC float SDLCALL MIX_GetTrackFrequencyRatio(MIX_Track *track);
 
